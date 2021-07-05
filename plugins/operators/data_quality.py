@@ -8,15 +8,26 @@ class DataQualityOperator(BaseOperator):
 
     @apply_defaults
     def __init__(self,
-                 # Define your operators params (with defaults) here
-                 # Example:
-                 # conn_id = your-connection-name
+                 redshift_conn_id="",
+                 quality_checks=[],
                  *args, **kwargs):
 
         super(DataQualityOperator, self).__init__(*args, **kwargs)
-        # Map params here
-        # Example:
-        # self.conn_id = conn_id
+        self.redshift_conn_id = redshift_conn_id
+        self.quality_checks = quality_checks
+        
 
     def execute(self, context):
         self.log.info('DataQualityOperator not implemented yet')
+
+        redshift_hook = PostgresHook(self.redshift_conn_id)
+
+        for qc in self.quality_checks:
+            records = redshift_hook.get_records(qc["query"])
+            result = records[0]
+            if result != qc["expected"]:
+                raise ValueError(
+                    f"Data quality test {qc['name']} failed for table {qc['table']}!"
+                    )
+            else:
+                self.log.info(f"Data quality test {qc['name']} passed for table {qc['table']}!")

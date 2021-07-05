@@ -110,7 +110,7 @@ load_songplays_table = LoadFactOperator(
     task_id='Load_songplays_fact_table',
     dag=dag,
     redshift_conn_id="redshift",
-    table="public.staging_events",
+    table="staging_events",
     query=SqlQueries.songplay_table_insert
 )
 
@@ -119,7 +119,7 @@ load_user_dimension_table = LoadDimensionOperator(
     task_id='Load_user_dim_table',
     dag=dag,
     redshift_conn_id="redshift",
-    table="public.users",
+    table="users",
     query=SqlQueries.user_table_insert,
     append=False
 )
@@ -128,7 +128,7 @@ load_song_dimension_table = LoadDimensionOperator(
     task_id='Load_song_dim_table',
     dag=dag,
     redshift_conn_id="redshift",
-    table="public.songs",
+    table="songs",
     query=SqlQueries.song_table_insert,
     append=False
 )
@@ -137,7 +137,7 @@ load_artist_dimension_table = LoadDimensionOperator(
     task_id='Load_artist_dim_table',
     dag=dag,
     redshift_conn_id="redshift",
-    table="public.artists",
+    table="artists",
     query=SqlQueries.artist_table_insert,
     append=False
 )
@@ -146,15 +146,42 @@ load_time_dimension_table = LoadDimensionOperator(
     task_id='Load_time_dim_table',
     dag=dag,
     redshift_conn_id="redshift",
-    table="public.time",
+    table="time",
     query=SqlQueries.time_table_insert,
     append=False
 )
 
 # Data quality checks
+
+def get_qc(table, column):
+    """Generate `non_empty` and `no_nulls` quality check queries for `table` and `column`.
+
+    Args:
+        table (str): Table name
+        column (str): Column name
+
+    Returns:
+        List[Dict]: List of dicts with keys `table`, `query` and `expected` outcome.
+    """
+    non_empty = f"SELECT CASE WHEN COUNT(*) > 0 THEN 1 ELSE 0 END FROM {table}"
+    no_nulls = f"SELECT COUNT(*) FROM {table} WHERE {column} IS NULL"
+
+    qcs = [
+        {"table": table, "query": non_empty, "expected": 1, "name": "non_empty"},
+        {"table": table, "query": no_nulls, "expected": 0, "name": f"no_nulls_{column}"}
+    ]
+
+    return qcs
+
 run_quality_checks = DataQualityOperator(
     task_id='Run_data_quality_checks',
-    dag=dag
+    dag=dag,
+    redshift_conn_id="redshift",
+    quality_checks=get_qc("songplays", "playid") + \
+                   get_qc("users", "userid") + \
+                   get_qc("songs", "songid") + \
+                   get_qc("artists", "artistid") + \
+                   get_qc("time", "start_time")
 )
 
 end_operator = DummyOperator(task_id='Stop_execution',  dag=dag)
