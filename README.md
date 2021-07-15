@@ -28,7 +28,11 @@ A second DAG is used for ETL.
 
 ## Instructions
 
-It is assumed that you have Airflow installed and running. In the Airflow UI, select the "DAGs" tab. Two DAGs should appear. First, run manually the `create_tables_dag`. Once everything runs successfully, turn on the `udac_example_dag`.
+It is assumed that you have Airflow installed and running. 
+
+Add credentials for Redshift and AWS with ids `redshift` and `aws_credentials` respectively. 
+
+In the Airflow UI, select the "DAGs" tab. Two DAGs should appear. First, run manually the `create_tables_dag`. Once everything runs successfully, turn on the `udac_example_dag`.
 
 ## Credits
 
