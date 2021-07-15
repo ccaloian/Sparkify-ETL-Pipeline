@@ -3,8 +3,15 @@ from airflow.models import BaseOperator
 from airflow.utils.decorators import apply_defaults
 
 class LoadFactOperator(BaseOperator):
+    """Load fact table from staging tables.
 
-    ui_color = '#F98866'
+    Args:
+        redhift_conn_id (str): Redshift connection id.
+        table (str): Table name.
+        query (str): SQL query that selects data to be inserted into `table`.
+    """
+
+    ui_color = "#F98866"
 
     @apply_defaults
     def __init__(self,

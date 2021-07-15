@@ -4,7 +4,18 @@ from airflow.models import BaseOperator
 from airflow.utils.decorators import apply_defaults
 
 class StageToRedshiftOperator(BaseOperator):
-    ui_color = '#358140'
+    """Load data from S3 to Redshift.
+
+    Args:
+        redshift_conn_id (str): Redshift connection id.
+        aws_credentials_id (str): AWS credentials id.
+        table (str): Table name.
+        s3_bucket (str): S3 bucket name.
+        s3_key (str): S3 key name for `s3_bucket`.
+        schema (str): JSON schema, 'auto' or path to json schema file.
+        region (str): AWS region name.
+    """
+    ui_color = "#358140"
 
     template_fields = ("s3_key",)
     copy_sql = """
@@ -37,7 +48,7 @@ class StageToRedshiftOperator(BaseOperator):
         self.aws_credentials_id = aws_credentials_id
 
     def execute(self, context):
-        self.log.info('StageToRedshiftOperator not implemented yet')
+        self.log.info("StageToRedshiftOperator not implemented yet")
 
         aws_hook = AwsHook(self.aws_credentials_id)
         credentials = aws_hook.get_credentials()
@@ -57,6 +68,6 @@ class StageToRedshiftOperator(BaseOperator):
             self.schema,
             self.region
         )
-        
-        self.log.info("Copying data from S3 to Redshift")
+
+        self.log.info("Copying data from S3 to Redshift.")
         redshift.run(formatted_sql)

@@ -3,8 +3,17 @@ from airflow.models import BaseOperator
 from airflow.utils.decorators import apply_defaults
 
 class LoadDimensionOperator(BaseOperator):
+    """Load dimension table from staging tables.
 
-    ui_color = '#80BD9E'
+    Args:
+        redhift_conn_id (str): Redshift connection id.
+        table (str): Table name.
+        query (str): SQL query that selects data to be inserted into `table`.
+        append (bool): If True, append rows to the existing `table`. 
+            If False (default) delete all rows in `table` before inserting 
+            the rows returned by `query`.
+    """
+    ui_color = "#80BD9E"
 
     @apply_defaults
     def __init__(self,

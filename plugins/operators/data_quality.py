@@ -3,8 +3,14 @@ from airflow.models import BaseOperator
 from airflow.utils.decorators import apply_defaults
 
 class DataQualityOperator(BaseOperator):
+    """Run a list of data quality checks on the data in Redshift.
 
-    ui_color = '#89DA59'
+    Args:
+        redshift_conn_id (str): Redshift connection id.
+        quality_checks (list): List of quality check SQL queries.
+    """
+
+    ui_color = "#89DA59"
 
     @apply_defaults
     def __init__(self,
@@ -18,7 +24,7 @@ class DataQualityOperator(BaseOperator):
         
 
     def execute(self, context):
-        self.log.info('DataQualityOperator not implemented yet')
+        self.log.info("DataQualityOperator not implemented yet")
 
         redshift_hook = PostgresHook(self.redshift_conn_id)
 
@@ -26,8 +32,6 @@ class DataQualityOperator(BaseOperator):
             records = redshift_hook.get_records(qc["query"])
             result = records[0]
             if result != qc["expected"]:
-                raise ValueError(
-                    f"Data quality test {qc['name']} failed for table {qc['table']}!"
-                    )
+                raise ValueError(f"Data quality test {qc['name']} failed for table {qc['table']}!")
             else:
                 self.log.info(f"Data quality test {qc['name']} passed for table {qc['table']}!")
