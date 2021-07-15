@@ -30,7 +30,7 @@ class DataQualityOperator(BaseOperator):
 
         for qc in self.quality_checks:
             records = redshift_hook.get_records(qc["query"])
-            result = records[0]
+            result = records[0][0]
             if result != qc["expected"]:
                 raise ValueError(f"Data quality test {qc['name']} failed for table {qc['table']}!")
             else:

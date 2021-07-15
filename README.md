@@ -8,6 +8,10 @@ The goal of the project is to create high grade data pipelines that are dynamic 
 
 ## Pipeline Overview
 
+A first DAG is used to create the tables in Redshift
+![create-tables](images/create-tables-dag.png)
+
+A second DAG is used for ETL.
 ![etl-dag](images/etl-dag.png)
 
 ## File Structure
@@ -24,7 +28,7 @@ The goal of the project is to create high grade data pipelines that are dynamic 
 
 ## Instructions
 
-TBA
+It is assumed that you have Airflow installed and running. In the Airflow UI, select the "DAGs" tab. Two DAGs should appear. First, run manually the `create_tables_dag`. Once everything runs successfully, turn on the `udac_example_dag`.
 
 ## Credits
 

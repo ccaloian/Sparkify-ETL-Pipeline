@@ -10,6 +10,86 @@ from helpers import SqlQueries
 # AWS_KEY = os.environ.get("AWS_KEY")
 # AWS_SECRET = os.environ.get("AWS_SECRET")
 
+# Dag for creating tables
+create_tables_dag = DAG(
+        "create_tables_dag",
+        description="Create tables dag",
+        start_date = datetime.utcnow()
+)
+
+start_operator_ = DummyOperator(task_id="Begin_execution",  dag=create_tables_dag)
+
+# Create tables
+create_stage_events_table = PostgresOperator(
+    task_id="Create_stage_events",
+    dag=create_tables_dag,
+    postgres_conn_id="redshift",
+    sql=SqlQueries.staging_events_table_create
+)
+
+create_stage_songs_table = PostgresOperator(
+    task_id="Create_stage_songs",
+    dag=create_tables_dag,
+    postgres_conn_id="redshift",
+    sql=SqlQueries.staging_songs_table_create
+)
+
+create_artists_table = PostgresOperator(
+    task_id="Create_artists",
+    dag=create_tables_dag,
+    postgres_conn_id="redshift",
+    sql=SqlQueries.artist_table_create
+)
+
+create_songs_table = PostgresOperator(
+    task_id="Create_songs",
+    dag=create_tables_dag,
+    postgres_conn_id="redshift",
+    sql=SqlQueries.songs_table_create
+)
+
+create_time_table = PostgresOperator(
+    task_id="Create_time",
+    dag=create_tables_dag,
+    postgres_conn_id="redshift",
+    sql=SqlQueries.time_table_create
+)
+
+create_users_table = PostgresOperator(
+    task_id="Create_users",
+    dag=create_tables_dag,
+    postgres_conn_id="redshift",
+    sql=SqlQueries.users_table_create
+)
+
+create_songplays_table = PostgresOperator(
+    task_id="Create_songplays",
+    dag=create_tables_dag,
+    postgres_conn_id="redshift",
+    sql=SqlQueries.songplays_table_create
+)
+
+end_operator_ = DummyOperator(task_id="Stop_execution",  dag=create_tables_dag)
+
+start_operator_ >> create_stage_events_table
+start_operator_ >> create_stage_songs_table
+start_operator_ >> create_artists_table
+start_operator_ >> create_songs_table
+start_operator_ >> create_users_table
+start_operator_ >> create_time_table
+start_operator_ >> create_songplays_table
+
+create_stage_events_table >> end_operator_
+create_stage_songs_table >> end_operator_
+create_artists_table >> end_operator_
+create_songs_table >> end_operator_
+create_users_table >> end_operator_
+create_time_table >> end_operator_
+create_songplays_table >> end_operator_
+
+
+
+# Dag for ETL
 default_args = {
     "owner": "udacity",
     "depends_on_past": False,
@@ -26,59 +106,10 @@ dag = DAG("udac_example_dag",
           default_args=default_args,
           description="Load and transform data in Redshift with Airflow",
           schedule_interval="0 * * * *"
-        )
+)
+
 
 start_operator = DummyOperator(task_id="Begin_execution",  dag=dag)
-
-# Create tables
-create_stage_events_table = PostgresOperator(
-    task_id="Create_stage_events",
-    dag=dag,
-    postgres_conn_id="redshift",
-    sql=SqlQueries.staging_events_table_create
-)
-
-create_stage_songs_table = PostgresOperator(
-    task_id="Create_stage_songs",
-    dag=dag,
-    postgres_conn_id="redshift",
-    sql=SqlQueries.staging_songs_table_create
-)
-
-create_artists_table = PostgresOperator(
-    task_id="Create_artists",
-    dag=dag,
-    postgres_conn_id="redshift",
-    sql=SqlQueries.artist_table_create
-)
-
-create_songs_table = PostgresOperator(
-    task_id="Create_songs",
-    dag=dag,
-    postgres_conn_id="redshift",
-    sql=SqlQueries.songs_table_create
-)
-
-create_time_table = PostgresOperator(
-    task_id="Create_time",
-    dag=dag,
-    postgres_conn_id="redshift",
-    sql=SqlQueries.time_table_create
-)
-
-create_users_table = PostgresOperator(
-    task_id="Create_users",
-    dag=dag,
-    postgres_conn_id="redshift",
-    sql=SqlQueries.users_table_create
-)
-
-create_songplays_table = PostgresOperator(
-    task_id="Create_songplays",
-    dag=dag,
-    postgres_conn_id="redshift",
-    sql=SqlQueries.songplays_table_create
-)
 
 # Copy data from S3 to Redshift
 stage_events_to_redshift = StageToRedshiftOperator(
@@ -86,7 +117,7 @@ stage_events_to_redshift = StageToRedshiftOperator(
     dag=dag,
     redshift_conn_id="redshift",
     aws_credentials_id="aws_credentials",
-    table="events",
+    table="staging_events",
     s3_bucket="udacity-dend",
     s3_key="log_data",
     schema="s3://udacity-dend/log_json_path.json",
@@ -98,7 +129,7 @@ stage_songs_to_redshift = StageToRedshiftOperator(
     dag=dag,
     redshift_conn_id="redshift",
     aws_credentials_id="aws_credentials",
-    table="songs",
+    table="staging_songs",
     s3_bucket="udacity-dend",
     s3_key="song_data/A/A/A",  #TODO: Remove /A/A/A (used only for testing)
     schema="auto",
@@ -110,7 +141,7 @@ load_songplays_table = LoadFactOperator(
     task_id="Load_songplays_fact_table",
     dag=dag,
     redshift_conn_id="redshift",
-    table="staging_events",
+    table="songplays",
     query=SqlQueries.songplay_table_insert
 )
 
@@ -186,20 +217,8 @@ run_quality_checks = DataQualityOperator(
 
 end_operator = DummyOperator(task_id="Stop_execution",  dag=dag)
 
-# start_operator >> stage_events_to_redshift
-# start_operator >> stage_songs_to_redshift
-
-start_operator >> create_stage_events_table
-start_operator >> create_stage_songs_table
-
-start_operator >> create_artists_table
-start_operator >> create_songs_table
-start_operator >> create_users_table
-start_operator >> create_time_table
-start_operator >> create_songplays_table
-
-create_stage_events_table >> stage_events_to_redshift
-create_stage_songs_table >> stage_songs_to_redshift
+start_operator >> stage_events_to_redshift
+start_operator >> stage_songs_to_redshift
 
 stage_events_to_redshift >> load_songplays_table
 stage_songs_to_redshift >> load_songplays_table
